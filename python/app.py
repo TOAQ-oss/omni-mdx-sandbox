@@ -1,10 +1,10 @@
 """
-sandbox/python/app.py — Rendu MDX 100% natif PyQt5.
+python/app.py — 100% native PyQt5 MDX rendering.
 
-Démontre que le moteur AST est complètement découplé du rendu :
-chaque AstNode est traduit en widget Qt natif, sans HTML ni WebEngine.
+Demonstrates that the AST engine is completely decoupled from rendering:
+each AstNode is translated into a native Qt widget, without HTML or WebEngine.
 
-Usage :
+Usage:
     pip install PyQt5 matplotlib
     python app.py
 """
@@ -23,10 +23,6 @@ import toaq_mdx
 from toaq_mdx.qt_renderer import QtRenderer
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  Éditeur MDX
-# ══════════════════════════════════════════════════════════════════════════════
-
 class MDXEditor(QTextEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -39,15 +35,10 @@ class MDXEditor(QTextEdit):
             "padding:16px;selection-background-color:#45475a;}"
         )
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-#  Fenêtre principale
-# ══════════════════════════════════════════════════════════════════════════════
-
 class MDXWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("MDX Renderer — PyQt5 natif")
+        self.setWindowTitle("MDX Renderer — PyQt5 native")
         self.resize(1280, 820)
         self._renderer = QtRenderer()
         self._debounce = QTimer(singleShot=True, interval=800)
@@ -62,7 +53,6 @@ class MDXWindow(QMainWindow):
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
 
-        # ── Toolbar ───────────────────────────────────────────────────────────
         toolbar = QWidget()
         toolbar.setFixedHeight(44)
         toolbar.setStyleSheet("background:#13131f;border-bottom:1px solid #2d2d3f;")
@@ -90,15 +80,13 @@ class MDXWindow(QMainWindow):
         tbl.addWidget(title); tbl.addWidget(badge); tbl.addStretch(); tbl.addWidget(btn)
         root.addWidget(toolbar)
 
-        # ── Splitter ──────────────────────────────────────────────────────────
         splitter = QSplitter(Qt.Horizontal)
         splitter.setHandleWidth(1)
         splitter.setStyleSheet("QSplitter::handle{background:#2d2d3f;}")
 
-        # Panneau éditeur
         ep = QWidget(); ep.setStyleSheet("background:#1e1e2e;")
         el = QVBoxLayout(ep); el.setContentsMargins(0,0,0,0); el.setSpacing(0)
-        el_lbl = QLabel("  ✏️  Éditeur MDX")
+        el_lbl = QLabel("  ✏️  MDX Editor")
         el_lbl.setFixedHeight(32)
         el_lbl.setStyleSheet(
             "background:#13131f;color:#475569;font-size:11px;"
@@ -109,10 +97,9 @@ class MDXWindow(QMainWindow):
         self.editor.textChanged.connect(lambda: self._debounce.start())
         el.addWidget(el_lbl); el.addWidget(self.editor)
 
-        # Panneau preview (scroll area)
         pp = QWidget(); pp.setStyleSheet("background:#f8fafc;")
         pl = QVBoxLayout(pp); pl.setContentsMargins(0,0,0,0); pl.setSpacing(0)
-        pl_lbl = QLabel("  🧩  Rendu natif PyQt5")
+        pl_lbl = QLabel("  🧩  Native PyQt5 rendering")
         pl_lbl.setFixedHeight(32)
         pl_lbl.setStyleSheet(
             "background:#f1f5f9;color:#475569;font-size:11px;"
@@ -134,7 +121,6 @@ class MDXWindow(QMainWindow):
         splitter.setSizes([480, 800])
         root.addWidget(splitter)
 
-        # ── Status bar ────────────────────────────────────────────────────────
         self.status = QStatusBar()
         self.status.setStyleSheet(
             "background:#13131f;color:#475569;font-size:11px;"
@@ -145,15 +131,15 @@ class MDXWindow(QMainWindow):
 
     def _is_likely_complete(self, mdx: str) -> bool:
         """
-        Vérification légère avant d'envoyer au parser Rust :
-        - les balises JSX ouvertes ont une fermeture correspondante
-        - pas de tag ouvert en cours de frappe (ex: "<Note" sans ">")
+        Light verification before sending to the Rust parser:
+        - open JSX tags have corresponding closing tags
+        - no open tags in the middle of typing (e.g., "<Note" without ">")
         """
         import re
-        # Tag ouvert mais pas encore fermé (utilisateur en train de taper)
+
         if re.search(r'<[A-Z][^>]*$', mdx, re.MULTILINE):
             return False
-        # Compter les ouvertures/fermetures JSX (composants uppercase)
+        
         opens  = len(re.findall(r'<([A-Z][a-zA-Z]*)[^/]', mdx))
         closes = len(re.findall(r'</([A-Z][a-zA-Z]*)>', mdx))
         selfcl = len(re.findall(r'<[A-Z][^>]*/>', mdx))
@@ -161,9 +147,8 @@ class MDXWindow(QMainWindow):
 
     def _render(self):
         mdx = self.editor.toPlainText()
-        # Ne pas tenter le parse si le MDX est visiblement incomplet
         if not self._is_likely_complete(mdx):
-            self.status.showMessage("⏳  En cours de saisie...")
+            self.status.showMessage("⏳  Entering data...")
             return
         try:
             ast = toaq_mdx.parse(mdx)
@@ -178,11 +163,11 @@ class MDXWindow(QMainWindow):
 
             self.scroll.setWidget(wrapper)
             self.status.showMessage(
-                f"✅  Rendu OK — {len(ast)} nœuds racine, 0 HTML généré"
+                f"✅  Render OK — {len(ast)} root nodes, 0 HTML generated"
             )
         except Exception as e:
             import traceback; traceback.print_exc()
-            err = QLabel(f"❌  Erreur de parsing :\n{e}")
+            err = QLabel(f"❌  Parsing error :\n{e}")
             err.setStyleSheet(
                 "background:#fef2f2;color:#991b1b;padding:16px;"
                 "border-radius:6px;font-family:monospace;"
@@ -191,63 +176,59 @@ class MDXWindow(QMainWindow):
             w = QWidget(); wl = QVBoxLayout(w)
             wl.addWidget(err); wl.addStretch()
             self.scroll.setWidget(w)
-            self.status.showMessage(f"❌  Erreur : {e}")
+            self.status.showMessage(f"❌  Parsing error : {e}")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  Contenu par défaut
-# ══════════════════════════════════════════════════════════════════════════════
+DEFAULT_MDX = """
+# Classical Mechanics
 
-DEFAULT_MDX = """\
-# Mécanique classique
+## Newton's Laws
 
-## Lois de Newton
+Newton's first law states that an object remains at rest or in uniform motion
+unless an external force acts on it.
 
-La **deuxième loi de Newton** établit que la résultante des forces
-est proportionnelle à l'*accélération* du système :
+The second law states that:
 
 $$ F = ma $$
 
-Où $F$ est la force en Newtons, $m$ la masse et $a$ l'accélération.
+Where $F$ is the force in Newtons, $m$ is the mass in kilograms, and $a$ is the acceleration.
 
-<Note type="warning" title="Attention aux unités">
-  Vérifiez que $F$ est en Newtons, $m$ en kg et $a$ en $m/s^2$.
+<Note type="warning" title="Be careful with units">
+  Always check that $F$ is in Newtons, $m$ is in kg, and $a$ is in $m/s^2$.
 </Note>
 
-## Énergie cinétique
+## Kinetic energy
 
-L'énergie cinétique est donnée par :
+The kinetic energy of an object of mass $m$ moving at velocity $v$ is:
 
 $$ E_k = \\frac{1}{2}mv^2 $$
 
-<Details title="Voir la démonstration">
-  On part du travail $W = \\int F\\,dx$ et on substitue $F = ma$ :
-  $$ W = m\\int a\\,dx = \\frac{1}{2}mv^2 $$
-  Ce qui donne bien l'expression de l'énergie cinétique.
+<Details title="Demonstration by integration">
+  We start with the work $W = \\int F \\cdot dx$ and apply $F = ma$:
+  $$ W = \\int ma \\cdot dx = m \\int a \\cdot dx $$
+  This gives $E_k = \\frac{1}{2}mv^2$.
 </Details>
 
-## Formatage inline
+## Momentum
 
-Du texte avec **gras**, *italique*, ~~barré~~ et `code inline`.
+<Table
+  caption="Fundamental quantities"
+  headers={[“Quantity”, “Symbol”, “Unit”]}
+  data={[
+    [“Force”, 'F', “Newton (N)”],
+    [“Mass”, 'm', “Kilogram (kg)”],
+    [“Acceleration”, 'a', “m/s²”],
+    [“Energy”, 'E', “Joule (J)”]
+  ]}
+/>
 
-> *"La simplicité est la sophistication suprême."*
+Momentum is defined by $p = mv$.
 
-## Liste
+## Conclusion
 
-- Premier élément
-- Deuxième élément
-  - Sous-élément imbriqué
-- Troisième élément
-
----
-
-Texte après le séparateur.
+These three laws form the basis of **classical mechanics** and allow
+the motion of any macroscopic object to be described.
 """
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-#  Main
-# ══════════════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

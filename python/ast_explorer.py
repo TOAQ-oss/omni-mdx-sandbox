@@ -1,11 +1,11 @@
 """
-sandbox/python/ast_explorer.py — Exploration et analyse de l'AST MDX.
+python/ast_explorer.py — Exploration and analysis of AST MDX.
 
-Cas démontré : un pipeline d'analyse de cours qui extrait automatiquement
-la structure, les formules mathématiques, les composants utilisés et
-génère un résumé exploitable (JSON) depuis un document MDX.
+Demonstrated case: a price analysis pipeline that automatically extracts
+the structure, mathematical formulas, components used, and
+generates an actionable summary (JSON) from an MDX document.
 
-Usage : python ast_explorer.py
+Usage: python ast_explorer.py
 """
 
 import json
@@ -14,62 +14,60 @@ from toaq_mdx.ast import AstNode
 from typing import List, Dict, Any
 
 
-MDX_COURS = """
-# Mécanique classique
+DEFAULT_MDX = """
+# Classical Mechanics
 
-## Lois de Newton
+## Newton's Laws
 
-La **première loi de Newton** stipule qu'un objet reste en repos ou en mouvement
-uniforme à moins qu'une force extérieure n'agisse sur lui.
+Newton's first law states that an object remains at rest or in uniform motion
+unless an external force acts on it.
 
-La deuxième loi établit que :
+The second law states that:
 
 $$ F = ma $$
 
-Où $F$ est la force en Newtons, $m$ la masse en kilogrammes et $a$ l'accélération.
+Where $F$ is the force in Newtons, $m$ is the mass in kilograms, and $a$ is the acceleration.
 
-<Note type="warning" title="Attention aux unités">
-  Vérifiez toujours que $F$ est en Newtons, $m$ en kg et $a$ en $m/s^2$.
+<Note type="warning" title="Be careful with units">
+  Always check that $F$ is in Newtons, $m$ is in kg, and $a$ is in $m/s^2$.
 </Note>
 
-## Énergie cinétique
+## Kinetic energy
 
-L'énergie cinétique d'un objet de masse $m$ se déplaçant à vitesse $v$ est :
+The kinetic energy of an object of mass $m$ moving at velocity $v$ is:
 
 $$ E_k = \\frac{1}{2}mv^2 $$
 
-<Details title="Démonstration par intégration">
-  On part du travail $W = \\int F \\cdot dx$ et on applique $F = ma$ :
+<Details title="Demonstration by integration">
+  We start with the work $W = \\int F \\cdot dx$ and apply $F = ma$:
   $$ W = \\int ma \\cdot dx = m \\int a \\cdot dx $$
-  Ce qui donne bien $E_k = \\frac{1}{2}mv^2$.
+  This gives $E_k = \\frac{1}{2}mv^2$.
 </Details>
 
-## Quantité de mouvement
+## Momentum
 
 <Table
-  caption="Grandeurs fondamentales"
-  headers={["Grandeur", "Symbole", "Unité"]}
+  caption="Fundamental quantities"
+  headers={[“Quantity”, “Symbol”, “Unit”]}
   data={[
-    ["Force", "F", "Newton (N)"],
-    ["Masse", "m", "Kilogramme (kg)"],
-    ["Accélération", "a", "m/s²"],
-    ["Énergie", "E", "Joule (J)"]
+    [“Force”, 'F', “Newton (N)”],
+    [“Mass”, 'm', “Kilogram (kg)”],
+    [“Acceleration”, 'a', “m/s²”],
+    [“Energy”, 'E', “Joule (J)”]
   ]}
 />
 
-La quantité de mouvement est définie par $p = mv$.
+Momentum is defined by $p = mv$.
 
 ## Conclusion
 
-Ces trois lois forment la base de la **mécanique classique** et permettent
-de décrire le mouvement de tout objet macroscopique.
+These three laws form the basis of **classical mechanics** and allow
+the motion of any macroscopic object to be described.
 """
 
 
-# ── Analyse ───────────────────────────────────────────────────────────────────
-
 def extract_headings(nodes: List[AstNode]) -> List[Dict[str, Any]]:
-    """Extrait la table des matières."""
+    """Extracts the table of contents."""
     headings = []
     def walk(nodes):
         for node in nodes:
@@ -82,7 +80,7 @@ def extract_headings(nodes: List[AstNode]) -> List[Dict[str, Any]]:
 
 
 def extract_math(nodes: List[AstNode]) -> Dict[str, List[str]]:
-    """Extrait toutes les formules inline et block."""
+    """Extracts all inline and block formulas."""
     inline, block = [], []
     def walk(nodes):
         for node in nodes:
@@ -96,7 +94,7 @@ def extract_math(nodes: List[AstNode]) -> Dict[str, List[str]]:
 
 
 def extract_components(nodes: List[AstNode]) -> List[Dict[str, Any]]:
-    """Extrait les composants JSX utilisés avec leurs attributs texte."""
+    """Extracts the JSX components used with their text attributes."""
     components = []
     def walk(nodes):
         for node in nodes:
@@ -115,7 +113,7 @@ def extract_components(nodes: List[AstNode]) -> List[Dict[str, Any]]:
 
 
 def count_words(nodes: List[AstNode]) -> int:
-    """Compte les mots dans le texte brut (hors math et composants)."""
+    """Counts the words in the plain text (excluding math and components)."""
     total = 0
     def walk(nodes):
         nonlocal total
@@ -129,7 +127,7 @@ def count_words(nodes: List[AstNode]) -> int:
 
 
 def build_summary(nodes: List[AstNode]) -> Dict[str, Any]:
-    """Construit un résumé complet du document."""
+    """Builds a comprehensive summary of the document."""
     headings   = extract_headings(nodes)
     math       = extract_math(nodes)
     components = extract_components(nodes)
@@ -149,26 +147,17 @@ def build_summary(nodes: List[AstNode]) -> Dict[str, Any]:
     }
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    print("╔══════════════════════════════════════════╗")
-    print("║         AST Explorer — MDX Parser        ║")
-    print("╚══════════════════════════════════════════╝\n")
-
-    ast = toaq_mdx.parse(MDX_COURS)
+    ast = toaq_mdx.parse(DEFAULT_MDX)
 
     summary = build_summary(ast)
 
-    # ── Table des matières ────────────────────────────────────────────────────
-    print("📑 Table des matières")
     print("─" * 40)
     for h in summary["table_of_contents"]:
         indent = "  " * (h["level"] - 1)
         print(f"{indent}{'#' * h['level']} {h['text']}")
 
-    # ── Stats ─────────────────────────────────────────────────────────────────
-    print("\n📊 Statistiques")
     print("─" * 40)
     s = summary["stats"]
     print(f"  Mots           : {s['word_count']}")
@@ -177,24 +166,18 @@ if __name__ == "__main__":
     print(f"  Formules block : {s['block_math_count']}")
     print(f"  Composants JSX : {s['component_count']}")
 
-    # ── Formules ──────────────────────────────────────────────────────────────
-    print("\n∑ Formules mathématiques")
     print("─" * 40)
     for f in summary["formulas"]["block"]:
         print(f"  [block]  $$ {f.strip()} $$")
     for f in summary["formulas"]["inline"]:
         print(f"  [inline] $ {f} $")
 
-    # ── Composants ────────────────────────────────────────────────────────────
-    print("\n🧩 Composants JSX")
     print("─" * 40)
     for c in summary["components"]:
         attrs = ", ".join(f"{k}={v!r}" for k, v in c["attrs"].items())
         closing = "/>" if c["self_closing"] else f">...</{c['type']}>"
         print(f"  <{c['type']} {attrs} {closing}")
 
-    # ── Export JSON ───────────────────────────────────────────────────────────
     out_path = "ast_summary.json"
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(summary, f, ensure_ascii=False, indent=2)
-    print(f"\n✅ Résumé exporté → {out_path}")
